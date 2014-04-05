@@ -1,0 +1,344 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<f:view contentType="text/html">
+	<h:head>
+		<f:facet name="first">
+			<meta http-equiv="X-UA-Compatible" content="EmulateIE8" />
+			<meta content='text/html; charset=UTF-8' http-equiv="Content-Type" />
+			<title>Forex Trading Game</title>
+		</f:facet>
+
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/default.css" />
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/syntaxhighlighter/syntaxhighlighter.css" />
+
+		<style type="text/css">
+.ui-layout-north {
+	z-index: 20 !important;
+	overflow: visible !important;;
+}
+
+.ui-layout-north .ui-layout-unit-content {
+	overflow: visible !important;
+}
+</style>
+		<h:outputStylesheet name="tradeGameStyles.css" />
+		<h:outputScript library="primefaces" name="jquery-1.11.0.js" />
+		<script type="text/javascript">
+			/**
+			 * Update entire table after socket publish
+			 */
+			function handleMessageRates(data) {
+				updateTable();
+
+			};
+			function handleMessageOptionsPanel(data) {
+				updateOptionsPanel();
+
+			};
+			function handleMessageTradeForm(data) {
+				updateTradeForm();
+
+			};
+			function ClearAuthentication(LogOffPage) {
+				var IsInternetExplorer = false;
+
+				try {
+					var agt = navigator.userAgent.toLowerCase();
+					if (agt.indexOf("msie") != -1) {
+						IsInternetExplorer = true;
+					}
+				} catch (e) {
+					IsInternetExplorer = false;
+				}
+				;
+
+				if (IsInternetExplorer) {
+					// Logoff Internet Explorer
+					document.execCommand("ClearAuthenticationCache");
+					window.location = LogOffPage;
+				} else {
+					// Logoff every other browsers
+					$.ajax({
+						username : 'unknown',
+						password : 'WrongPassword',
+						url : './cgi-bin/PrimoCgi',
+						type : 'GET',
+						beforeSend : function(xhr) {
+							xhr.setRequestHeader("Authorization",
+									"Basic AAAAAAAAAAAAAAAAAAA=");
+						},
+
+						error : function(err) {
+							window.location = LogOffPage;
+						}
+					});
+				}
+			}
+
+			$(document).ready(function() {
+				$('#Btn1').click(function() {
+					// Call Clear Authentication 
+					ClearAuthentication("force_logout.html");
+				});
+			});
+		</script>
+	</h:head>
+
+
+	<h:body>
+
+		<p:socket channel="/rates" autoConnect="true"
+			onMessage="handleMessageRates" />
+		<p:socket channel="/updateOptionsPanel" autoConnect="true"
+			onMessage="handleMessageOptionsPanel" />
+		<p:socket channel="/updateTradeForm" autoConnect="true"
+			onMessage="handleMessageTradeForm" />
+		<p:layout fullPage="true" id="page">
+			<p:layoutUnit id="top" position="north" size="45"
+				header="Forex Trading Game" resizable="true" closable="false"
+				collapsible="false">
+			</p:layoutUnit>
+
+			<p:layoutUnit position="south" size="50" resizable="true"
+				closable="true" collapsible="true" style="text-align:center">
+
+				<p:outputLabel style="font-size:10px;"> © Marc Dünki, 2014</p:outputLabel>
+			</p:layoutUnit>
+
+			<p:layoutUnit id="left" position="west" size="290" resizable="true"
+				closable="false" collapsible="true" header="Options" minSize="200">
+				<p:accordionPanel id="optionsPanel">
+					<p:tab title="My Account" id="Account">
+						<h:form id="accountForm">
+							<p:poll interval="120"
+								listener="#{userController.refreshOptionsPanel}"
+								update=":optionsPanel" />
+							<p:remoteCommand name="updateOptionsPanel" update=":optionsPanel" />
+							<h:outputText value="ACCOUNT   BLOCKED"
+								style="text-decoration:bold;color:red;"
+								rendered="#{userController.user.account.isBlocked}" />
+							<p:panel id="accountPanel">
+								<h:panelGrid columns="2" height="5" width="200">
+									<h:outputText value="Username: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.username}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Registered: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.accountCreated}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Currency: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.account.currency}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Account: " style="font-size:15px;" />
+									<h:outputText id="userBalance"
+										value="#{userController.user.account.balance}"
+										style="color : blue;font-size:16px;">
+										<f:convertNumber pattern="#,###,##0.00" />
+									</h:outputText>
+									<h:outputText value="Balance: " style="font-size:15px;"></h:outputText>
+									<h:outputText
+										value="#{userController.user.account.balance + userController.user.account.marginBalance}"
+										style="color : blue;font-size:16px;">
+										<f:convertNumber pattern="#,###,##0.00" />
+									</h:outputText>
+								</h:panelGrid>
+							</p:panel>
+						</h:form>
+						<p:commandButton style="font-size:14px;" value="Logout"
+							icon="ui-icon-logout" ajax="true"
+							onclick="ClearAuthentication('http://finance.yahoo.com')">
+						</p:commandButton>
+					</p:tab>
+					<p:tab title="Ranking">
+						<h:form id="rankingForm">
+							<p:dataTable id="rankingTable" var="user"
+								value="#{userController.ranking}" style="font-size:15px;"
+								rowStyleClass="#{user[0] eq userController.user.username ? 'highlightRankingUser' : ''}">
+								<p:column headerText="Username">
+									<h:outputText value="#{user[0]}" />
+								</p:column>
+
+								<p:column headerText="Account">
+									<h:outputText value="#{user[1]}">
+										<f:convertNumber pattern="#,###,##0.00" />
+									</h:outputText>
+								</p:column>
+							</p:dataTable>
+						</h:form>
+					</p:tab>
+					<p:tab title="Help" titletip="true">
+						<p:outputLabel style="font-size:16px;">Click here to see the instructions: 
+					</p:outputLabel>
+						<p:commandButton style="font-size:12px;" id="effectsDialogButton"
+							value="Help" onclick="PF('dlg3').show();" type="button" />
+					</p:tab>
+				</p:accordionPanel>
+			</p:layoutUnit>
+
+			<p:layoutUnit id="right" position="east" size="600"
+				header="My open Trades" resizable="true" closable="false"
+				collapsible="true" style="text-align:left">
+				<h:form id="tradeListForm">
+					<p:poll interval="45"
+						listener="#{userController.refreshTradeValues}"
+						update="userTradeList" />
+					<p:dataTable id="userTradeList" var="usertrades"
+						value="#{userController.trades}" size="350" paginator="false"
+						style="font-size:17px;"
+						rowStyleClass="#{(usertrades.actualInvestmentValue - usertrades.investmentTradeCurrency) ge 0 ? 'highlightTradeWin' : 'highlightTradeLoss'} ">
+
+						<p:column headerText="Pair">
+							<h:outputText value="#{usertrades.exchangeRatePair}" />
+						</p:column>
+
+						<p:column headerText="Buy Rate" size="5%">
+							<h:outputText value="#{usertrades.exchangeRateOnBuy}">
+								<f:convertNumber pattern="#,###,##0.0000" />
+							</h:outputText>
+						</p:column>
+
+						<p:column headerText="Investment">
+							<h:outputText value="#{usertrades.investmentTradeCurrency}">
+								<f:convertNumber pattern="#,###,##0.00" />
+							</h:outputText>
+							<h:outputText
+								value=" #{usertrades.exchangeRatePair.currencyFrom}"></h:outputText>
+						</p:column>
+
+						<p:column headerText="Difference">
+							<h:outputText styleClass="difference"
+								value="#{ (usertrades.actualInvestmentValue - usertrades.investmentTradeCurrency)}">
+								<f:convertNumber pattern="#,###,##0.00" />
+							</h:outputText>
+							<h:outputText
+								value=" #{usertrades.exchangeRatePair.currencyFrom}"></h:outputText>
+						</p:column>
+
+						<p:column>
+							<p:commandButton value="Sell" style="font-size:12px;"
+								action="#{userController.closeTrade(usertrades)}"
+								update="userTradeList" ajax="true" />
+						</p:column>
+					</p:dataTable>
+
+				</h:form>
+			</p:layoutUnit>
+
+			<p:layoutUnit title="center" id="center" position="center"
+				header="Exchange Rates">
+				<p:dialog width="320" height="auto" header="Confirmation"
+					widgetVar="dlg5" showEffect="explode" hideEffect="bounce">
+					<h:outputText value="Trade has successfully been opened." />
+				</p:dialog>
+				<p:dialog id="tradeDialog" width="300" height="auto"
+					header="Make a new Trade" widgetVar="dlg4" showEffect="explode"
+					hideEffect="clip">
+					<h:form id="tradeForm">
+						<p:growl id="messages" autoUpdate="true" closable="true" />
+						<h:panelGrid id="tradePanelGrid" columns="2" height="5">
+							<h:outputText value="Currency Pair: " style="font-size:15px;" />
+							<p:selectOneMenu id="exchangeRateSelectMenu"
+								value="#{userController.exchangeRatePair}" effect="fade"
+								converter="generic" required="true"
+								requiredMessage="Please select an exchange-rate pair"
+								size="auto" style="font-size:15px;">
+								<f:selectItem itemLabel="Select: " itemValue="" size="auto" />
+								<f:selectItems value="#{userController.exchangeRates}" />
+							</p:selectOneMenu>
+							<h:outputText style="font-size:15px;"
+								value="Amount [#{userController.user.account.currency}]" />
+							<p:selectOneMenu id="tradeSelectMenu"
+								value="#{userController.tradeAmount}" effect="fold"
+								editable="false" required="true" style="font-size:15px;"
+								requiredMessage="Please select a trade amount">
+								<f:selectItem itemLabel="Select: " itemValue="" />
+								<f:selectItems value="#{userController.tradeAmounts}" />
+							</p:selectOneMenu>
+							<h:outputLabel id="stopLossLabel" style="font-size:15px;"
+								for="stopLoss" value="Stop-Loss: ">
+								<p:tooltip id="toolTipSL" for="stopLossLabel"
+									value="Sets max-exchange rate value at which the trade will be closed."
+									showEffect="clip" hideEffect="explode" />
+							</h:outputLabel>
+
+							<p:inputText id="stopLoss" value="#{userController.stopLoss}"
+								required="true" label="Stop-Loss" size="3"
+								title="Sets the max-exchange rate value at which the trade will be closed.">
+								<f:validateDoubleRange minimum="0.0001" />
+							</p:inputText>
+							<h:outputLabel id="stopWinLabel" style="font-size:15px;"
+								for="stopWin" value="Stop-Win: ">
+								<p:tooltip id="toolTipSW" for="stopWinLabel"
+									value="Sets the min-exchange rate value at which the trade will be closed."
+									showEffect="clip" hideEffect="explode" />
+							</h:outputLabel>
+							<p:inputText id="stopWin" value="#{userController.stopWin}"
+								required="true" label="Stop-Win" size="3"
+								title="Sets min-exchange rate value, to secure a WIN. Trade will be closed at this rate.">
+								<f:validateDoubleRange minimum="0.0001" />
+							</p:inputText>
+
+							<p:commandButton value="Buy" style="font-size:12px;"
+								validateClient="true" action="#{userController.openTrade}"
+								update=":tradeListForm:userTradeList" ajax="true"
+								disabled="#{userController.user.account.isBlocked}"
+								oncomplete="if (args &amp;&amp; !args.validationFailed) {dlg4.hide();dlg5.show()}"
+								resetValues="true">
+							</p:commandButton>
+							<h:commandButton value="Reset" style="margin-right:20px;">
+								<p:ajax update="tradeForm" resetValues="true" />
+							</h:commandButton>
+						</h:panelGrid>
+					</h:form>
+				</p:dialog>
+				<h:form id="xrateForm">
+					<p:remoteCommand name="updateTradeForm"
+						update=":tradeForm:tradePanelGrid" />
+					<p:dialog width="755" height="auto" header="Help - Trading Game"
+						widgetVar="dlg3" showEffect="explode" hideEffect="bounce">
+						<h:outputText value="#{userController.helpText}" escape="false" />
+					</p:dialog>
+
+					<p:remoteCommand name="updateTable" update="xrates" />
+					<p:dataTable id="xrates" var="rate"
+						value="#{exchangeRateController.exchangeRates}"
+						style="font-size:17px;"
+						rowStyleClass="#{rate.hasIncreased eq true ? 'plusRate' : 'minusRate'}">
+						<p:column headerText="Pair">
+							<h:outputText value="#{rate.currencyFrom}/#{rate.currencyTo}" />
+						</p:column>
+
+						<p:column headerText="Price">
+							<h:outputText value="#{rate.exchangeRate}">
+								<f:convertNumber pattern="#,###,##0.0000" />
+							</h:outputText>
+						</p:column>
+
+						<p:column headerText="Change" styleClass="value">
+							<h:outputText value="#{rate.changeInDifference}">
+								<f:convertNumber pattern="#,###,##0.0000" />
+							</h:outputText>
+						</p:column>
+
+						<p:column headerText="%-Chng." styleClass="percentage">
+							<h:outputText value="#{rate.changeInPercentage}">
+								<f:convertNumber pattern="#,###,##0.0000" />
+							</h:outputText>
+						</p:column>
+					</p:dataTable>
+				</h:form>
+				<p:commandButton style="font-size:12px;" id="effectsDialogButton"
+					value="Open a new trade" onclick="PF('dlg4').show();" type="button"
+					ajax="true" />
+			</p:layoutUnit>
+		</p:layout>
+	</h:body>
+</f:view>
+</html>

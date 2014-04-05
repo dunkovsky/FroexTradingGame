@@ -1,0 +1,113 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/BasicTemplate.xhtml">
+	<ui:define name="content">
+		<h:head>
+		</h:head>
+		<h:body>
+		<h:form name="newUser">
+				<p:growl id="messages" showDetail="true" />
+				<p:panel header="Add a new user to the Trading Platform">
+					<h:panelGrid columns="2" cellpadding="5">
+						<h:outputText id="UserName" value="Username:" />
+						<p:inputMask value="#{landingController.user.username}"
+							required="true" requiredMessage="Please enter a username." />
+						<h:outputText value="Email: " />
+						<p:inputMask value="#{landingController.user.email}"
+							required="true" requiredMessage="Please enter an email." />
+						<h:outputText value="Password: " />
+						<p:inputMask value="#{landingController.user.password}"
+							required="true" requiredMessage="Please enter a password." />
+						<p:commandButton value="Reset" type="reset" />
+						<p:commandButton value="Save" update=":form:users"
+							action="#{landingController.saveUser()}" ajax="false"
+							oncomplete="PF('dlg').show()" />
+
+					</h:panelGrid>
+				</p:panel>
+
+			</h:form>
+			<h:form id="form">
+				<p:growl id="messages" showDetail="true" />
+
+				<p:contextMenu for="users" widgetVar="lMenu">
+					<p:menuitem value="Edit Cell" icon="ui-icon-search"
+						onclick="PF('landingController').showCellEditor();return false;" />
+					<p:menuitem value="Hide Menu" icon="ui-icon-close"
+						onclick="PF('lMenu').hide()" />
+				</p:contextMenu>
+
+<p:dataTable value="#{landingController.users}" id="users"
+					var="user" editable="true" editMode="cell"
+					widgetVar="landingController" paginator="true" rows="10">
+
+					<f:facet name="header">  
+            User-directory
+        </f:facet>
+					<p:ajax event="cellEdit" listener="#{landingController.onCellEdit}"
+						update=":form:messages" />
+
+<p:column headerText="Username" style="width:25%">
+						<p:cellEditor>
+							<f:facet name="output">
+								<h:outputText value="#{user.username}" />
+							</f:facet>
+							<f:facet name="input">
+								<p:inputText value="#{user.username}" style="width:auto"
+									label="Name" required="true" requiredMessage="Please enter a username"/>
+							</f:facet>
+						</p:cellEditor>
+					</p:column>
+
+					<p:column headerText="Email" style="width:25%">
+						<p:cellEditor>
+							<f:facet name="output">
+								<h:outputText value="#{user.email}" />
+							</f:facet>
+							<f:facet name="input">
+								<p:inputText id="emailInput" value="#{user.email}"
+									style="width:auto"
+									label="Name" required="true" requiredMessage="Please enter an email address">
+								</p:inputText>
+							</f:facet>
+						</p:cellEditor>
+					</p:column>
+
+					<p:column headerText="Creation-Date" style="width:25%">
+								<h:outputText value="#{user.created}" />
+					</p:column>
+					<p:column headerText="Password" style="width:25%">
+						<p:cellEditor>
+							<f:facet name="output">
+								<h:outputText value="#{user.password}" />
+							</f:facet>
+							<f:facet name="input">
+								<p:inputText value="#{user.password}" style="width:auto"
+									label="Name" required="true" requiredMessage="Please enter a password"/>
+							</f:facet>
+						</p:cellEditor>
+					</p:column>
+					<p:column headerText="Account" style="width:25%">
+					<h:outputText value="#{user.account.balance}" />
+					</p:column>
+					<p:column headerText="Credit-Balance" style="width:25%">
+					<h:outputText value="#{user.account.virtualBalance}" />
+					</p:column>
+					<p:column style="width:10%">
+						<p:commandButton value="delete" icon="ui-icon-trash"
+							action="#{landingController.deleteUser(user)}" update="links"
+							ajax="false"></p:commandButton>
+					</p:column>
+				</p:dataTable>
+			</h:form>
+		</h:body>
+	</ui:define>
+</ui:composition>
+</html>

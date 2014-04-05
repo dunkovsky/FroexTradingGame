@@ -1,0 +1,220 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<f:view contentType="text/html">
+	<h:head>
+		<f:facet name="first">
+			<meta http-equiv="X-UA-Compatible" content="EmulateIE8" />
+			<meta content='text/html; charset=UTF-8' http-equiv="Content-Type" />
+			<title>Admin Console</title>
+		</f:facet>
+
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/default.css" />
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/syntaxhighlighter/syntaxhighlighter.css" />
+
+		<style type="text/css">
+.ui-layout-north {
+	z-index: 20 !important;
+	overflow: visible !important;;
+}
+
+.ui-layout-north .ui-layout-unit-content {
+	overflow: visible !important;
+}
+</style>
+		<h:outputStylesheet name="tradeGameStyles.css" />
+	</h:head>
+
+
+	<h:body>
+		<p:layout fullPage="true" id="page">
+			<p:layoutUnit id="top" position="north" size="50" resizable="true">
+
+				<p:menubar style="background-color:gray">
+
+					<p:submenu label="Logout" icon="ui-icon-help">
+						<p:menuitem value="Contents" url="#" />
+						<p:submenu label="Search" icon="ui-icon-search">
+							<p:submenu label="Text">
+								<p:menuitem value="Workspace" url="#" />
+							</p:submenu>
+							<p:menuitem value="File" url="#" />
+						</p:submenu>
+					</p:submenu>
+
+					<p:submenu label="Help" icon="ui-icon-help">
+						<p:menuitem value="Contents" url="#" />
+						<p:submenu label="Search" icon="ui-icon-search">
+							<p:submenu label="Text">
+								<p:menuitem value="Workspace" url="#" />
+							</p:submenu>
+							<p:menuitem value="File" url="#" />
+						</p:submenu>
+					</p:submenu>
+
+				</p:menubar>
+
+			</p:layoutUnit>
+
+			<p:layoutUnit id="left" position="west" size="280" resizable="true"
+				closable="true" collapsible="true" header="Options" minSize="200">
+				<p:accordionPanel>
+					<p:tab title="Add a user" id="userForm">
+
+						<h:form id="accountForm">
+							<h:form name="newUser">
+								<p:growl id="messages" showDetail="true" />
+								<p:panel header="New user">
+									<h:panelGrid columns="1" cellpadding="5">
+										<h:outputText id="UserName" value="Username:" />
+										<p:inputMask value="#{adminController.user.username}"
+											required="true" requiredMessage="Please enter a username."
+											size="15" />
+										<h:outputText value="Email: " />
+										<p:inputMask value="#{adminController.user.email}"
+											required="true" requiredMessage="Please enter an email."
+											size="15" />
+										<h:outputText value="Password: " />
+										<p:inputMask value="#{adminController.user.password}"
+											required="true" requiredMessage="Please enter a password."
+											size="15" />
+										<p:commandButton value="Reset" type="reset" />
+										<p:commandButton value="Save" update=":form:users"
+											action="#{adminController.saveUser()}" ajax="false"
+											oncomplete="PF('dlg').show()" />
+
+									</h:panelGrid>
+								</p:panel>
+
+							</h:form>
+						</h:form>
+
+					</p:tab>
+
+					<p:tab title="Add a Currency-Pair">
+						<h:form name="newCurrencyPair">
+							<p:growl id="messages" showDetail="true" />
+							<p:panel>
+								<h:panelGrid columns="1" cellpadding="5">
+									<h:outputText id="Currency-From" value="Currency-From:" />
+									<p:inputMask value="#{adminController.exchangeRatePair.currencyFrom}"
+										required="true" requiredMessage="Please enter a currency"
+										size="15" />
+									<h:outputText value="Currency-To: " />
+									<p:inputMask value="#{adminController.exchangeRatePair.currencyTo}"
+										required="true" requiredMessage="Please enter a currency"
+										size="15" />
+									<h:outputText value="Price: " />
+									<p:inputMask value="#{adminController.exchangeRatePair.exchangeRate}"
+										required="true" requiredMessage="Please enter the currency rate"
+										size="15" />
+									<p:commandButton value="Reset" type="reset" />
+									<p:commandButton value="Save" update=":exchangeRates"
+										action="#{adminController.saveExchangeRatePair()}" ajax="true"
+										oncomplete="PF('dlg').show()" />
+
+								</h:panelGrid>
+							</p:panel>
+
+						</h:form>
+					</p:tab>
+
+					<p:tab title="Change Currency" update="accountCurrencyForm">
+
+						<h:form id="currencyForm">
+
+						</h:form>
+					</p:tab>
+				</p:accordionPanel>
+			</p:layoutUnit>
+
+			<p:layoutUnit id="right" position="east" size="220"
+				header="Exchange Rates" resizable="true" closable="true"
+				collapsible="true" style="text-align:left">
+
+				<p:dataTable id="exchangeRates" var="rate" value="#{adminController.exchangeRates}"
+					rowStyleClass="#{rate.hasIncreased eq true ? 'plusRate' : 'minusRate'}">
+					<p:column headerText="Currency Pair">
+						<h:outputText value="#{rate.currencyFrom}/#{rate.currencyTo}" />
+					</p:column>
+				</p:dataTable>
+
+			</p:layoutUnit>
+
+			<p:layoutUnit title="center" id="center" position="center"
+				resizable="true" header="Registered users">
+				<h:form id="form">
+					<p:growl id="messages" showDetail="true" />
+
+					<p:contextMenu for="users" widgetVar="lMenu">
+						<p:menuitem value="Edit Cell" icon="ui-icon-search"
+							onclick="PF('landingController').showCellEditor();return false;" />
+						<p:menuitem value="Hide Menu" icon="ui-icon-close"
+							onclick="PF('lMenu').hide()" />
+					</p:contextMenu>
+					<p:dataTable value="#{adminController.users}" id="users" var="user"
+						editable="true" editMode="cell" widgetVar="adminController"
+						paginator="true" rows="10" style="table-layout: fixed"
+						RowStyleClass="#{user.account.isBlocked ne true ? 'accountBlocked' : ''}">
+						<p:ajax event="cellEdit" listener="#{adminController.onCellEdit}"
+							update=":form:messages" />
+
+						<p:column headerText="Username" style="width:10%">
+							<p:cellEditor>
+								<f:facet name="output">
+									<h:outputText value="#{user.username}" />
+								</f:facet>
+								<f:facet name="input">
+									<p:inputText value="#{user.username}" style="width:auto"
+										label="Name" required="true"
+										requiredMessage="Please enter a username" />
+								</f:facet>
+							</p:cellEditor>
+						</p:column>
+
+						<p:column headerText="Email" style="width:20%">
+							<p:cellEditor>
+								<f:facet name="output">
+									<h:outputText value="#{user.email}" />
+								</f:facet>
+								<f:facet name="input">
+									<p:inputText id="emailInput" value="#{user.email}"
+										style="width:auto" label="Name" required="true"
+										requiredMessage="Please enter an email address">
+									</p:inputText>
+								</f:facet>
+							</p:cellEditor>
+						</p:column>
+						<p:column headerText="Account" style="width:35%">
+							<h:outputText
+								value="#{user.account.balance} #{user.account.currency}" />
+						</p:column>
+						<p:column headerText="Margin-Balance" style="width:35%">
+							<h:outputText
+								value="#{user.account.marginBalance} #{user.account.currency}" />
+						</p:column>
+						<p:column headerText="Blocked" style="width:5%">
+							<h:outputText value="#{user.account.isBlocked}" />
+						</p:column>
+						<p:column style="width:2%">
+							<p:commandButton value="delete" icon="ui-icon-trash"
+								action="#{adminController.deleteUser(user)}" update="users"
+								ajax="true" size="2">
+							</p:commandButton>
+						</p:column>
+					</p:dataTable>
+				</h:form>
+			</p:layoutUnit>
+		</p:layout>
+
+	</h:body>
+
+</f:view>
+</html>

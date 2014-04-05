@@ -1,0 +1,39 @@
+@CHARSET "UTF-8";
+
+.highlightRankingUser  {
+    background: gray  ;
+    color:white ;
+}
+
+.minusRate .value {
+     color: red;
+}
+
+.minusRate .percentage {
+     color: red;
+}
+
+.plusRate .value {
+	color:green;
+}
+
+.plusRate .percentage {
+
+    color:green ;
+}
+
+.highlightTradeWin .difference {
+	color:green;
+}
+
+.highlightTradeLoss .difference{
+	color:red;
+}
+
+.accountBlocked {
+	color:red;
+}
+
+/* body {
+	background: url("#{resource['background.jpg']}");
+} */
