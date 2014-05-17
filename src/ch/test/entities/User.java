@@ -1,8 +1,6 @@
 package ch.test.entities;
 
 import java.io.Serializable;
-import java.util.Set;
-
 import javax.ejb.Stateless;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,13 +8,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * Session Bean implementation class User
+ * Represents a user in the trading game, holding all necessary data and
+ * providing operations such as updating and receiving of data.
+ * 
+ * @author Marc Dünki
  */
+
 @Entity(name = "user")
 @Table(name = "user")
 @NamedQueries({

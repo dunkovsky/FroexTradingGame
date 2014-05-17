@@ -1,0 +1,190 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<f:view contentType="text/html">
+	<h:head>
+		<f:facet name="first">
+			<meta http-equiv="X-UA-Compatible" content="EmulateIE8" />
+			<meta content='text/html; charset=UTF-8' http-equiv="Content-Type" />
+			<title>Forex Trading Game</title>
+		</f:facet>
+
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/default.css" />
+		<link type="text/css" rel="stylesheet"
+			href="#{request.contextPath}/css/syntaxhighlighter/syntaxhighlighter.css" />
+
+		<style type="text/css">
+.ui-layout-north {
+	z-index: 20 !important;
+	overflow: visible !important;;
+}
+
+.ui-layout-north .ui-layout-unit-content {
+	overflow: visible !important;
+}
+</style>
+		<h:outputStylesheet name="tradeGameStyles.css" />
+		<h:outputScript library="primefaces" name="jquery-1.11.0.js" />
+		<script type="text/javascript">
+			/**
+			 * Update entire table after socket publish
+			 */
+			function handleMessageRates(data) {
+				updateTable();
+				updateOpenTrades();
+				updateVirtualBalance();
+
+
+			};
+			function handleMessageOptionsPanel(data) {
+				updateVirtualBalance();
+				updateOpenTrades();
+
+			};
+			function handleMessageTradeForm(data) {
+				updateTradeForm();
+
+			};
+			function ClearAuthentication(LogOffPage) {
+				var IsInternetExplorer = false;
+
+				try {
+					var agt = navigator.userAgent.toLowerCase();
+					if (agt.indexOf("msie") != -1) {
+						IsInternetExplorer = true;
+					}
+				} catch (e) {
+					IsInternetExplorer = false;
+				}
+				;
+
+				if (IsInternetExplorer) {
+					// Logoff Internet Explorer
+					document.execCommand("ClearAuthenticationCache");
+					window.location = LogOffPage;
+				} else {
+					// Logoff every other browsers
+					$.ajax({
+						username : 'unknown',
+						password : 'WrongPassword',
+						url : './cgi-bin/PrimoCgi',
+						type : 'GET',
+						beforeSend : function(xhr) {
+							xhr.setRequestHeader("Authorization",
+									"Basic AAAAAAAAAAAAAAAAAAA=");
+						},
+
+						error : function(err) {
+							window.location = LogOffPage;
+						}
+					});
+				}
+			}
+
+			$(document).ready(function() {
+				$('#Btn1').click(function() {
+					// Call Clear Authentication 
+					ClearAuthentication("force_logout.html");
+				});
+			});
+		</script>
+	</h:head>
+
+
+	<h:body>
+
+		<p:socket channel="/rates" autoConnect="true"
+			onMessage="handleMessageRates" />
+		<p:socket channel="/updateOptionsPanel" autoConnect="true"
+			onMessage="handleMessageOptionsPanel" />
+		<p:socket channel="/updateTradeForm" autoConnect="true"
+			onMessage="handleMessageTradeForm" />
+		<p:layout fullPage="true" id="page">
+			<p:layoutUnit id="top" position="north" size="45"
+				header="Forex Trading Game" resizable="true" closable="false"
+				collapsible="false">
+			</p:layoutUnit>
+
+			<p:layoutUnit position="south" size="50" resizable="true"
+				closable="true" collapsible="true" style="text-align:center">
+
+				<p:outputLabel style="font-size:10px;"> © Marc Dünki, 2014</p:outputLabel>
+			</p:layoutUnit>
+
+			<p:layoutUnit id="left" position="west" size="298" resizable="true"
+				closable="false" collapsible="true" header="Options" minSize="200">
+				<p:accordionPanel id="optionsPanel">
+					<p:tab title="My Account" id="Account">
+						<h:form id="accountForm">
+							<p:remoteCommand name="updateVirtualBalance"
+								actionListener="#{userController.refreshAccount}"
+								update="accountForm" />
+							<h:outputText value="ACCOUNT   BLOCKED"
+								style="text-decoration:bold;color:red;"
+								rendered="#{userController.user.account.isBlocked}" />
+							<p:panel id="accountPanel">
+								<h:panelGrid columns="2" height="5" width="170">
+									<h:outputText value="Username: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.username}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Registered: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.accountCreated}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Currency: " style="font-size:15px;"></h:outputText>
+									<h:outputText value="#{userController.user.account.currency}"
+										style="color : blue;font-size:16px;" />
+									<h:outputText value="Account: " style="font-size:15px;" />
+									<h:outputText id="userBalance"
+										value="#{userController.user.account.balance}"
+										style="color : blue;font-size:16px;">
+										<f:convertNumber pattern="#,###,##0.00" />
+									</h:outputText>
+									<h:outputText value="Balance: " style="font-size:15px;"></h:outputText>
+									<h:outputText id="virtualBalance"
+										value="#{userController.user.account.balance + userController.totalAmountOfOpenTrades}"
+										style="color : blue;font-size:16px;">
+										<f:convertNumber pattern="#,###,##0.00" />
+									</h:outputText>
+								</h:panelGrid>
+							</p:panel>
+						</h:form>
+						<p:commandButton style="font-size:14px;" value="Exit Game"
+							icon="ui-icon-logout" ajax="true"
+							onclick="ClearAuthentication('http://finance.yahoo.com')">
+						</p:commandButton>
+					</p:tab>
+				</p:accordionPanel>
+			</p:layoutUnit>
+
+			<p:layoutUnit title="center" id="center" position="center">
+				<p:outputPanel>Hi traders, the game has ended. </p:outputPanel>
+				<p:outputPanel> Thank you for playing and evaluating the usability!</p:outputPanel>
+				<p:outputPanel>This is the final ranking, #1 - #3 will receive a prize:</p:outputPanel>
+				<h:form id="rankingForm">
+					<p:poll interval="60" listener="#{userController.refreshRanking}"
+						update="rankingTable" />
+					<p:dataTable id="rankingTable" var="user"
+						value="#{userController.ranking}" style="font-size:15px;"
+						rowStyleClass="#{user[0] eq userController.user.username ? 'highlightRankingUser' : ''}">
+						<p:column headerText="Username">
+							<h:outputText value="#{user[0]}" />
+						</p:column>
+
+						<p:column headerText="Account">
+							<h:outputText value="#{user[1]}">
+								<f:convertNumber pattern="#,###,##0.00" />
+							</h:outputText>
+						</p:column>
+					</p:dataTable>
+				</h:form>
+			</p:layoutUnit>
+		</p:layout>
+	</h:body>
+</f:view>
+</html>

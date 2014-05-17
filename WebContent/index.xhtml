@@ -37,10 +37,14 @@
 			 */
 			function handleMessageRates(data) {
 				updateTable();
+				updateOpenTrades();
+				updateVirtualBalance();
+
 
 			};
 			function handleMessageOptionsPanel(data) {
-				updateOptionsPanel();
+				updateVirtualBalance();
+				updateOpenTrades();
 
 			};
 			function handleMessageTradeForm(data) {
@@ -113,20 +117,19 @@
 				<p:outputLabel style="font-size:10px;"> © Marc Dünki, 2014</p:outputLabel>
 			</p:layoutUnit>
 
-			<p:layoutUnit id="left" position="west" size="290" resizable="true"
+			<p:layoutUnit id="left" position="west" size="298" resizable="true"
 				closable="false" collapsible="true" header="Options" minSize="200">
 				<p:accordionPanel id="optionsPanel">
 					<p:tab title="My Account" id="Account">
 						<h:form id="accountForm">
-							<p:poll interval="120"
-								listener="#{userController.refreshOptionsPanel}"
-								update=":optionsPanel" />
-							<p:remoteCommand name="updateOptionsPanel" update=":optionsPanel" />
+							<p:remoteCommand name="updateVirtualBalance"
+								actionListener="#{userController.refreshAccount}"
+								update="accountForm" />
 							<h:outputText value="ACCOUNT   BLOCKED"
 								style="text-decoration:bold;color:red;"
 								rendered="#{userController.user.account.isBlocked}" />
 							<p:panel id="accountPanel">
-								<h:panelGrid columns="2" height="5" width="200">
+								<h:panelGrid columns="2" height="5" width="170">
 									<h:outputText value="Username: " style="font-size:15px;"></h:outputText>
 									<h:outputText value="#{userController.user.username}"
 										style="color : blue;font-size:16px;" />
@@ -143,21 +146,23 @@
 										<f:convertNumber pattern="#,###,##0.00" />
 									</h:outputText>
 									<h:outputText value="Balance: " style="font-size:15px;"></h:outputText>
-									<h:outputText
-										value="#{userController.user.account.balance + userController.user.account.marginBalance}"
+									<h:outputText id="virtualBalance"
+										value="#{userController.user.account.balance + userController.totalAmountOfOpenTrades}"
 										style="color : blue;font-size:16px;">
 										<f:convertNumber pattern="#,###,##0.00" />
 									</h:outputText>
 								</h:panelGrid>
 							</p:panel>
 						</h:form>
-						<p:commandButton style="font-size:14px;" value="Logout"
+						<p:commandButton style="font-size:14px;" value="Exit Game"
 							icon="ui-icon-logout" ajax="true"
 							onclick="ClearAuthentication('http://finance.yahoo.com')">
 						</p:commandButton>
 					</p:tab>
 					<p:tab title="Ranking">
 						<h:form id="rankingForm">
+							<p:poll interval="60" listener="#{userController.refreshRanking}"
+								update="rankingTable" />
 							<p:dataTable id="rankingTable" var="user"
 								value="#{userController.ranking}" style="font-size:15px;"
 								rowStyleClass="#{user[0] eq userController.user.username ? 'highlightRankingUser' : ''}">
@@ -182,12 +187,12 @@
 				</p:accordionPanel>
 			</p:layoutUnit>
 
-			<p:layoutUnit id="right" position="east" size="600"
+			<p:layoutUnit id="right" position="east" maxSize="592" minSize="590"
 				header="My open Trades" resizable="true" closable="false"
 				collapsible="true" style="text-align:left">
 				<h:form id="tradeListForm">
-					<p:poll interval="45"
-						listener="#{userController.refreshTradeValues}"
+					<p:remoteCommand name="updateOpenTrades"
+						actionListener="#{userController.refreshTradeValues}"
 						update="userTradeList" />
 					<p:dataTable id="userTradeList" var="usertrades"
 						value="#{userController.trades}" size="350" paginator="false"
@@ -231,8 +236,7 @@
 				</h:form>
 			</p:layoutUnit>
 
-			<p:layoutUnit title="center" id="center" position="center"
-				header="Exchange Rates">
+			<p:layoutUnit title="center" id="center" position="center">
 				<p:dialog width="320" height="auto" header="Confirmation"
 					widgetVar="dlg5" showEffect="explode" hideEffect="bounce">
 					<h:outputText value="Trade has successfully been opened." />
@@ -267,29 +271,27 @@
 									value="Sets max-exchange rate value at which the trade will be closed."
 									showEffect="clip" hideEffect="explode" />
 							</h:outputLabel>
-
 							<p:inputText id="stopLoss" value="#{userController.stopLoss}"
 								required="true" label="Stop-Loss" size="3"
 								title="Sets the max-exchange rate value at which the trade will be closed.">
 								<f:validateDoubleRange minimum="0.0001" />
 							</p:inputText>
 							<h:outputLabel id="stopWinLabel" style="font-size:15px;"
-								for="stopWin" value="Stop-Win: ">
+								for="stopWin" value="Take-Profit: ">
 								<p:tooltip id="toolTipSW" for="stopWinLabel"
 									value="Sets the min-exchange rate value at which the trade will be closed."
 									showEffect="clip" hideEffect="explode" />
 							</h:outputLabel>
-							<p:inputText id="stopWin" value="#{userController.stopWin}"
-								required="true" label="Stop-Win" size="3"
+							<p:inputText id="stopWin" value="#{userController.takeProfit}"
+								required="true" label="Take-Profit" size="3"
 								title="Sets min-exchange rate value, to secure a WIN. Trade will be closed at this rate.">
 								<f:validateDoubleRange minimum="0.0001" />
 							</p:inputText>
-
 							<p:commandButton value="Buy" style="font-size:12px;"
 								validateClient="true" action="#{userController.openTrade}"
 								update=":tradeListForm:userTradeList" ajax="true"
 								disabled="#{userController.user.account.isBlocked}"
-								oncomplete="if (args &amp;&amp; !args.validationFailed) {dlg4.hide();dlg5.show()}"
+								oncomplete="if (args &amp;&amp; !args.validationFailed) {dlg4.hide();dlg5.hide;}"
 								resetValues="true">
 							</p:commandButton>
 							<h:commandButton value="Reset" style="margin-right:20px;">
@@ -297,12 +299,13 @@
 							</h:commandButton>
 						</h:panelGrid>
 					</h:form>
+
 				</p:dialog>
 				<h:form id="xrateForm">
 					<p:remoteCommand name="updateTradeForm"
 						update=":tradeForm:tradePanelGrid" />
 					<p:dialog width="755" height="auto" header="Help - Trading Game"
-						widgetVar="dlg3" showEffect="explode" hideEffect="bounce">
+						widgetVar="dlg3" showEffect="explode" hideEffect="clip">
 						<h:outputText value="#{userController.helpText}" escape="false" />
 					</p:dialog>
 
@@ -335,8 +338,9 @@
 					</p:dataTable>
 				</h:form>
 				<p:commandButton style="font-size:12px;" id="effectsDialogButton"
-					value="Open a new trade" onclick="PF('dlg4').show();" type="button"
-					ajax="true" />
+					value="Open a new trade" onclick="PF('dlg4').show();" type="button">
+					<p:ajax update=":tradeForm:tradePanelGrid" resetValues="true" />
+				</p:commandButton>
 			</p:layoutUnit>
 		</p:layout>
 	</h:body>

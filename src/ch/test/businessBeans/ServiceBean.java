@@ -11,29 +11,29 @@ import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.inject.Inject;
 
+import com.arjuna.ats.jta.exceptions.RollbackException;
+
 import ch.test.BackingBeans.UserController;
 import ch.test.entities.ExchangeRatePair;
-import ch.test.entities.Trade;
 import ch.test.entityCollections.ExchangeRateCollection;
 import ch.test.eventHandler.EventHandler;
 import ch.test.webservice.Currency;
 import ch.test.webservice.CurrencyConvertorSoapProxy;
 
 /**
- * Session Bean implementation class ServiceBean
+ * Service Bean is a Singleton Bean that handles the update routine of the
+ * exchange rates as well. It uses a timer to get the exchange rate updates and
+ * launches the update and validation of the trades.
  */
 @Singleton
 @LocalBean
 public class ServiceBean {
 
-	@EJB
+	@Inject
 	private ExchangeRateBean exchangeRateBean;
 
 	@EJB
 	private AccountBean accountBean;
-
-	@EJB
-	private TradeBean tradeBean;
 
 	@Inject
 	private EventHandler eventHandler;
@@ -57,41 +57,59 @@ public class ServiceBean {
 	}
 
 	private void updateExchangeRates() {
-		if (exchangeRateBean == null) {
-			System.out.println("ExchangeRateBean null");
-		}
 		List<ExchangeRatePair> exchangeRates = exchangeRateBean
 				.getAllCrossRates();
 		ExchangeRateCollection exchangeRateCollection = new ExchangeRateCollection();
 		if (exchangeRates.size() > 0) {
+			int counter = 0;
 			for (ExchangeRatePair exchangeRate : exchangeRates) {
 				try {
-					double rateRaw = (double) currencyProxy.conversionRate(
-							new Currency(exchangeRate.getCurrencyFrom()
-									.getCurrencyCode()), new Currency(
-									exchangeRate.getCurrencyTo()
-											.getCurrencyCode()));
-					double rate = this.approximate(rateRaw, 4);
-					System.out.println("Rate: " + rate);
-					double inverse = 1.0D;
+					double inverseRate;
+					double rate;
+					if (exchangeRate.getCurrencyTo().getCurrencyCode()
+							.equals("XAU")) {
+						double rateRawInversiveXAU = (double) currencyProxy
+								.conversionRate(new Currency(exchangeRate
+										.getCurrencyTo().getCurrencyCode()),
+										new Currency(exchangeRate
+												.getCurrencyFrom()
+												.getCurrencyCode()));
+						inverseRate = rateRawInversiveXAU;
+						rate = 1.0 / inverseRate;
+					} else {
+						double rateRaw = (double) currencyProxy.conversionRate(
+								new Currency(exchangeRate.getCurrencyFrom()
+										.getCurrencyCode()), new Currency(
+										exchangeRate.getCurrencyTo()
+												.getCurrencyCode()));
+						rate = rateRaw;
+						inverseRate = 1.0 / rate;
+					}
+
 					double formerExchangeRate = exchangeRate.getExchangeRate();
-					System.out.println("Inversive Rate: " + inverse / rate);
 					exchangeRate
-							.setHasIncreased(rate - formerExchangeRate >= 0);
+							.setHasIncreased(rate - formerExchangeRate >= 0.0);
 					exchangeRate.setChangeInDifference(rate
 							- formerExchangeRate);
 					exchangeRate
 							.setChangeInPercentage(((rate - formerExchangeRate) / formerExchangeRate) * 100);
 					exchangeRate.setExchangeRate(rate);
-					exchangeRate.setInversiveExchangeRate(inverse / rate);
-					exchangeRateBean.updateExchangeRatePair(exchangeRate);
+					exchangeRate.setInversiveExchangeRate(inverseRate);
 					exchangeRateCollection.addElement(exchangeRate);
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
+					++counter;
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
 					e.printStackTrace();
+
+				} finally {
+
 				}
 			}
-			eventHandler.publishUpdatedExchangeRates(exchangeRateCollection);
+			if (counter == exchangeRates.size()) {
+				exchangeRateBean.updateExchangeRatePair(exchangeRates);
+				eventHandler
+						.publishUpdatedExchangeRates(exchangeRateCollection);
+			}
 		} else {
 			System.out.println("Exchange Rates List null");
 		}
@@ -105,24 +123,22 @@ public class ServiceBean {
 		this.userControllers.remove(userController);
 	}
 
-	@Schedule(dayOfMonth = "*", dayOfWeek = "Mon-Fri", hour = "*", minute = "*", second = "0")
+	@Schedule(dayOfMonth = "*", dayOfWeek = "Mon-Fri", hour = "*", minute = "*", second = "*/15")
 	private void refreshTradeValues() {
 		updateExchangeRates();
-		tradeBean.updateAllTrades();
-		accountBean.updateAllAccounts();
+		accountBean.updateAllTrades();
 		accountBean.checkAllAccounts();
 	}
 
-	@Schedule(dayOfMonth = "*", dayOfWeek = "Mon-Fri", hour = "23", minute = "59", second = "0")
-	private void deleteRecordsDB() {
-		List<Trade> closedTrades = tradeBean.getClosedTrades();
-		if (closedTrades.size() > 0) {
-			for (Trade trade : closedTrades) {
-				tradeBean.removeTrade(trade);
-			}
-		}
-	}
+	/*
+	 * @Schedule(dayOfMonth = "*", dayOfWeek = "Mon-Fri", hour = "23", minute =
+	 * "59", second = "0") private void deleteRecordsDB() { List<Trade>
+	 * closedTrades = accountBean.getClosedTrades(); if (closedTrades.size() >
+	 * 0) { for (Trade trade : closedTrades) { accountBean.removeTrade(trade); }
+	 * } }
+	 */
 
+	@SuppressWarnings("unused")
 	private double approximate(double value, int digits) {
 		double gerundet = Math.round(value * Math.pow(10d, digits));
 		return gerundet / Math.pow(10d, digits);

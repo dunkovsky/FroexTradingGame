@@ -2,32 +2,28 @@ package ch.test.entities;
 
 import java.io.Serializable;
 import java.util.Currency;
-
-import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import javax.persistence.Table;
-
 import ch.test.interfaces.IConvertible;
 
 /**
- * Session Bean implementation class ExchangeRatePair
+ * Represents an exchange rate pair of the game, holding all data and proving
+ * operations such as updating and receiving of data.
+ * 
+ * @author Marc Dünki
  */
+
 @Stateless
 @Entity
 @Table
 @NamedQuery(name = "getCrossRatePair", query = "SELECT e FROM ExchangeRatePair e WHERE (e.currencyFrom = ?1 AND e.currencyTo = ?2)")
 public class ExchangeRatePair implements Serializable, IConvertible {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -471601470697669225L;
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -121,6 +117,5 @@ public class ExchangeRatePair implements Serializable, IConvertible {
 	public void setChangeInPercentage(double changeInPercentage) {
 		this.changeInPercentage = changeInPercentage;
 	}
-	
-	
+
 }

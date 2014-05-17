@@ -10,11 +10,9 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
- * This annotation serves as DeleteLink-Event
+ * This annotation serves as an UpdatedExchange-Event
  * 
- * @author Marc DŸnki
- * 
- * 
+ * @author Marc DÃ¼nki
  */
 @Qualifier
 @Retention(RUNTIME)

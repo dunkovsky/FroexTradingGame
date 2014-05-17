@@ -1,0 +1,17 @@
+eclipse.preferences.version=1
+encoding//src/ch/converter/GenericConverter.java=UTF-8
+encoding//src/ch/test/BackingBeans/AdminController.java=UTF-8
+encoding//src/ch/test/BackingBeans/ExchangeRateController.java=UTF-8
+encoding//src/ch/test/BackingBeans/UserController.java=UTF-8
+encoding//src/ch/test/Enum/AccountStatus.java=UTF-8
+encoding//src/ch/test/annotations/UpdatedExchangeRates.java=UTF-8
+encoding//src/ch/test/businessBeans/ExchangeRateBean.java=UTF-8
+encoding//src/ch/test/businessBeans/UserBean.java=UTF-8
+encoding//src/ch/test/entities/Account.java=UTF-8
+encoding//src/ch/test/entities/ExchangeRatePair.java=UTF-8
+encoding//src/ch/test/entities/Trade.java=UTF-8
+encoding//src/ch/test/entities/User.java=UTF-8
+encoding//src/ch/test/entityCollections/ExchangeRateCollection.java=UTF-8
+encoding//src/ch/test/eventHandler/EventHandler.java=UTF-8
+encoding//src/ch/test/interfaces/IConvertible.java=UTF-8
+encoding/<project>=UTF-8

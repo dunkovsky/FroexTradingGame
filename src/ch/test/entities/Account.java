@@ -3,8 +3,6 @@ package ch.test.entities;
 import java.io.Serializable;
 import java.util.Currency;
 import java.util.Set;
-
-import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -12,41 +10,40 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * Session Bean implementation class Account
+ * Represents an account of the game, holding all data and providing operations
+ * such as updating and receiving data.
+ * 
+ * @author Marc Dünki
  */
 
-@Entity(name="account")
-@Table(name="account")
-
+@Entity(name = "account")
+@Table(name = "account")
 @NamedQuery(name = "receiveValidAccounts", query = "SELECT a FROM account a WHERE a.isBlocked = false")
-
 @Stateless
-public class Account implements Serializable{
-	
+public class Account implements Serializable {
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1702358894028191680L;
 	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	private int id;
 	private double balance;
-	private double marginBalance;
 	private Currency currency;
 	private boolean isBlocked;
-	@OneToMany(mappedBy="account")
+	@OneToMany(mappedBy = "account")
 	protected Set<Trade> trades;
 
 	/**
-     * Default constructor. 
-     */
-    public Account() {
-        this.setBalance(5000.00f);
-    }
+	 * Default constructor.
+	 */
+	public Account() {
+		this.setBalance(5000.00D);
+	}
 
 	public int getId() {
 		return id;
@@ -64,14 +61,6 @@ public class Account implements Serializable{
 		this.balance = balance;
 	}
 
-	public double getMarginBalance() {
-		return marginBalance;
-	}
-
-	public void setMarginBalance(double marginBalance) {
-		this.marginBalance = marginBalance;
-	}
-
 	public Currency getCurrency() {
 		return currency;
 	}
@@ -87,20 +76,16 @@ public class Account implements Serializable{
 	public void setTrades(Set<Trade> trade) {
 		this.trades = trade;
 	}
-	
-	public void updateBalance(double value){
+
+	public void updateBalance(double value) {
 		this.balance += value;
 	}
-	
-	public void updateMarginBalance(double value){
-		this.marginBalance += value;
-	}
-	
-	public void addTrade(Trade trade){
-        this.trades.add(trade);
-        if (trade.getAccount() != this) {
-            trade.setAccount(this);
-        }
+
+	public void addTrade(Trade trade) {
+		this.trades.add(trade);
+		if (trade.getAccount() != this) {
+			trade.setAccount(this);
+		}
 	}
 
 	public boolean getIsBlocked() {
@@ -110,6 +95,5 @@ public class Account implements Serializable{
 	public void setIsBlocked(boolean isBlocked) {
 		this.isBlocked = isBlocked;
 	}
-	
-	
+
 }

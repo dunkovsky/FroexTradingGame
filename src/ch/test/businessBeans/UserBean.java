@@ -5,9 +5,6 @@ import java.sql.Date;
 import java.util.Calendar;
 import java.util.Currency;
 import java.util.List;
-import java.util.Locale;
-
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.EJB;
@@ -19,12 +16,14 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
-
 import ch.test.entities.Account;
 import ch.test.entities.User;
 
 /**
- * Session Bean implementation class UserBean
+ * User Bean handles User entities and provides creating, updating, removing and
+ * receiving of those entities.
+ * 
+ * @author Marc Dünki
  */
 @Stateless
 @LocalBean
